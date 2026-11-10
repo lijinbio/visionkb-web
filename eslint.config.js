@@ -1,0 +1,25 @@
+import js from '@eslint/js';
+import globals from 'globals';
+
+export default [
+  { ignores: ['src/visionkb_web/static/js/vendor/**', 'node_modules/**', '.venv/**'] },
+  js.configs.recommended,
+  {
+    files: ['src/visionkb_web/static/js/**/*.js'],
+    languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.browser } },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-restricted-properties': ['error',
+        { object: 'window', property: 'localStorage', message: 'The Claude key and chat stay in sessionStorage.' },
+        { object: 'document', property: 'write' }],
+      'no-restricted-globals': ['error', { name: 'localStorage', message: 'Use sessionStorage (design §4).' }, 'eval'],
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      eqeqeq: ['error', 'always'],
+    },
+  },
+  {
+    files: ['tests/js/**/*.mjs', 'scripts/**/*.mjs', 'eslint.config.js'],
+    languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } },
+  },
+];

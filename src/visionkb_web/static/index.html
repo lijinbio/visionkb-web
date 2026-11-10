@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>VisionKB — eye knowledge graph</title>
+  <meta name="description" content="VisionKB: a knowledge graph of eye genes, retinal and ocular cell types, diseases and HECA single-cell atlas evidence, with a chat that answers from the graph.">
+  <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
+  <link rel="stylesheet" href="static/css/app.css">
+  <script type="module" src="static/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="VisionKB home">
+      <img src="static/favicon.svg" alt="" width="30" height="30">
+      <span class="brand-name">VisionKB</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-nav="home">Home</a>
+      <a href="#/release" data-nav="release">Release</a>
+      <a href="#/about" data-nav="about">About</a>
+    </nav>
+    <div class="topbar-right">
+      <a class="release-badge" id="release-badge" href="#/release" title="Knowledge-graph release served">
+        <span class="dot" aria-hidden="true"></span><span class="label">loading…</span>
+      </a>
+      <button type="button" class="btn btn-ghost chat-toggle" id="chat-toggle" aria-controls="chat" aria-expanded="false">Ask</button>
+      <button type="button" class="btn btn-ghost" id="logout" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <div id="known-issues" class="ki-banner" hidden></div>
+
+  <div class="layout">
+    <main id="main" tabindex="-1" aria-live="off">
+      <noscript><p class="panel">VisionKB needs JavaScript (no external scripts are loaded).</p></noscript>
+    </main>
+    <aside id="chat" class="chat-panel" aria-label="Ask VisionKB"></aside>
+  </div>
+
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <section id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></section>
+
+  <div id="gate" class="gate" hidden>
+    <form class="gate-card" id="gate-form" autocomplete="off">
+      <img src="static/favicon.svg" alt="" width="56" height="56">
+      <h1>VisionKB</h1>
+      <p>This site serves lab-access data. Enter the access code you were given.</p>
+      <label for="gate-code">Access code</label>
+      <input id="gate-code" name="code" type="password" required minlength="16" autocomplete="off" spellcheck="false">
+      <p class="form-error" id="gate-error" role="alert"></p>
+      <button type="submit" class="btn btn-primary">Enter</button>
+    </form>
+  </div>
+
+  <dialog id="notice" class="notice" aria-labelledby="notice-title">
+    <form method="dialog">
+      <h2 id="notice-title">Before you use the chat</h2>
+      <ul>
+        <li>Your questions, this tab's chat history and the <strong>tool results</strong> (VisionKB facts and HECA atlas summary values; HECA is lab-access data) are sent to <strong>Anthropic under your own account</strong> with the key you enter.</li>
+        <li>The key stays in this browser tab (sessionStorage). It is sent only to this server, in one header, for the call it makes to Anthropic, and is never stored or logged there. <em>Forget key</em> removes it at once; closing the tab does too.</li>
+        <li>Answers come from the knowledge graph through tools, cite the release and evidence, and can still be wrong: check the linked evidence.</li>
+      </ul>
+      <div class="notice-actions">
+        <button value="cancel" class="btn btn-ghost">Cancel</button>
+        <button value="ok" class="btn btn-primary" id="notice-ok">I understand</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <span>VisionKB · <a href="#/about">how the chat works</a> · <a href="https://github.com/lijinbio/visionkb-web" rel="noopener noreferrer" target="_blank">source</a></span>
+    <span id="footer-version"></span>
+  </footer>
+</body>
+</html>

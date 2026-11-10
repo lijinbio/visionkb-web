@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visionkb-web"
+version = "0.0.1"
+description = "VisionKB home page: knowledge-graph search, entity and release pages, and a chat box that answers with the user's own Claude API key through the visionkb-kg MCP tools"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Rui Chen Lab, University of California, Irvine" }]
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Framework :: FastAPI",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "fastapi>=0.162,<0.170",
+  "uvicorn>=0.54",
+  "httpx2>=2.16",
+  "anthropic>=2.8,<3",
+  "mcp>=2.3,<3",
+  # MCP server visionkb-kg 0.0.1 (stdio child), from the aiscientist-mcp tag visionkb-kg-v0.0.1 (see tool.uv.sources)
+  "aiscientist-mcp-common==0.0.2",
+  "aiscientist-mcp-visionkb-kg==0.0.1",
+]
+
+[project.urls]
+Repository = "https://github.com/lijinbio/visionkb-web"
+
+[project.scripts]
+visionkb-web = "visionkb_web.cli:main"
+
+[tool.uv.sources]
+aiscientist-mcp-common = { git = "https://github.com/lijinbio/aiscientist-mcp", tag = "visionkb-kg-v0.0.1", subdirectory = "packages/common" }
+aiscientist-mcp-visionkb-kg = { git = "https://github.com/lijinbio/aiscientist-mcp", tag = "visionkb-kg-v0.0.1", subdirectory = "packages/visionkb-kg" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+visionkb_web = ["static/*.html", "static/*.svg", "static/css/*.css", "static/js/*.js", "static/js/vendor/*", "static/vendor-licenses/*"]
+
+[dependency-groups]
+dev = ["pytest>=9", "ruff>=0.16", "pre-commit>=4", "playwright>=1.65"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["E501", "S101", "S603", "S607", "S310"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S"]
+"scripts/**" = ["S"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Security"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+markers = [
+  "integration: needs a live visionkb-api (VISIONKB_IT_API_URL, VISIONKB_IT_TOKEN_FILE)",
+  "browser: needs playwright with chromium (VISIONKB_BROWSER=1)",
+]

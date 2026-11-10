@@ -1,0 +1,22 @@
+{
+  "name": "visionkb-web-frontend",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Frontend tooling for visionkb-web: vendored marked + DOMPurify, ESLint, node tests (no build step)",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --test tests/js/",
+    "vendor": "node scripts/vendor_js.mjs",
+    "vendor:check": "node scripts/vendor_js.mjs --check"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "dompurify": "3.4.17",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "jsdom": "31.0.0",
+    "marked": "18.2.0"
+  }
+}
