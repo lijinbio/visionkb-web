@@ -1,8 +1,8 @@
-// Boot, access gate, release badge and known-issues banner, hash router, evidence drawer.
+// Boot, access gate, release badge, hash router, evidence drawer.
 import * as api from './api.js';
 import { createChat } from './chat.js';
 import { renderHome, renderEntity, renderRelease, renderAbout, renderEvidencePage, evidenceView, fillStats } from './pages.js';
-import { h, clear, errorBox, setKnownIssues } from './ui.js';
+import { h, clear, errorBox } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
 const main = $('main');
@@ -37,27 +37,12 @@ document.addEventListener('click', (e) => {
   if (a && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); openEvidence(a.dataset.edge); }
 });
 
-// ---- release badge and known issues ----
+// ---- release badge ----
 function setRelease(env) {
   if (!env || env.status !== 'ok') return;
   ctx.release = env;
-  setKnownIssues(env.data?.known_issues || []);
   $('release-badge').querySelector('.label').textContent = env.kg_release;
-  renderBanner(env.data?.known_issues || []);
   fillStats(document.getElementById('home-stats'), env);
-}
-function renderBanner(issues) {
-  const el = $('known-issues');
-  clear(el);
-  if (!issues.length || sessionStorage.getItem('vkw.ki_dismissed') === (ctx.release?.kg_release || '')) { el.hidden = true; return; }
-  const ki = issues[0];
-  const text = ki.id === 'KI-1'
-    ? 'small HRCA snRNA amacrine subtypes carry a rod program (likely doublets), so rod genes such as RHO and PDE6A have expressed_in edges to them; the edges are reported, not removed.'
-    : `${ki.title}${ki.status ? ` (${ki.status})` : ''}.`;
-  const dismiss = h('button', { type: 'button', class: 'btn-x', 'aria-label': 'Dismiss known issues notice' }, '×');
-  dismiss.addEventListener('click', () => { sessionStorage.setItem('vkw.ki_dismissed', ctx.release?.kg_release || ''); el.hidden = true; });
-  el.append(h('strong', {}, `Known issue ${ki.id}`), h('span', {}, text, ' ', h('a', { href: '#/release' }, issues.length > 1 ? `All ${issues.length} known issues` : 'Details')), dismiss);
-  el.hidden = false;
 }
 async function loadRelease() {
   const badge = $('release-badge');

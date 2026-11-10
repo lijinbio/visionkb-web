@@ -64,11 +64,6 @@ h1 { font-size: 1.7rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1.02rem; }
 .release-badge.ok .dot { background: var(--ok); } .release-badge.err .dot { background: var(--err); }
 .topbar .chat-toggle, .chat-head .chat-toggle { display: none; }
 
-/* known issues */
-.ki-banner { display: flex; gap: .8rem; align-items: flex-start; padding: .55rem 1.1rem; background: var(--amber-bg); color: var(--amber);
-  border-bottom: 1px solid var(--amber-line); font-size: .9rem; }
-.ki-banner strong { white-space: nowrap; }
-.ki-banner .btn-x { margin-left: auto; }
 
 /* layout */
 .layout { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) var(--chat-w); align-items: start; }
@@ -88,7 +83,17 @@ main { padding: 1.4rem clamp(1rem, 3vw, 2.4rem) 3rem; min-width: 0; outline: non
   .nav a { padding: .4rem .45rem; }
   .release-badge .label { max-width: 9.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
-@media (max-width: 560px) { .brand-name { display: none; } .topbar { gap: .5rem; } }
+@media (max-width: 560px) {
+  .brand-name { display: none; }
+  .topbar { gap: .25rem; padding: 0 .45rem; }
+  .brand img { width: 26px; height: 26px; }
+  .nav { gap: 0; }
+  .nav a { padding: .35rem .38rem; font-size: .92rem; }
+  .release-badge { padding: .25rem .4rem; }
+  .release-badge .label { display: none; }
+  .topbar-right { gap: .1rem; }
+  .topbar .btn { padding: .35rem .42rem; font-size: .9rem; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* buttons, inputs */
@@ -125,7 +130,6 @@ label { font-weight: 600; font-size: .9rem; }
 .chip.cat-anatomy { background: #fdf2e1; color: #7a4a0c; border-color: #efd3a6; }
 .chip.cat-other { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
 @media (prefers-color-scheme: dark) { .chip[class*="cat-"] { background: var(--surface-2); color: var(--ink); border-color: var(--line); } }
-.chip.ki { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-line); }
 .chip.ok { color: var(--ok); } .chip.err { color: var(--err); background: var(--err-bg); border-color: var(--err); }
 .curie { font-family: var(--mono); font-size: .86rem; color: var(--muted); }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }

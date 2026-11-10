@@ -59,7 +59,9 @@ def test_page_flow(page, web):
     pg.click("#gate-form button[type=submit]")
     pg.wait_for_selector("#gate", state="hidden")
     expect(pg.locator("#release-badge .label")).to_have_text(re.compile(r"^visionkb-"))
-    assert "KI-1" in pg.inner_text("#known-issues")
+    # release known issues are not shown anywhere on the page (the fake release carries one: KI-1)
+    assert pg.locator("#known-issues, .ki-banner, .chip.ki").count() == 0
+    assert "KI-1" not in pg.inner_text("body") and "known issue" not in pg.inner_text("body").lower()
     # search autocomplete -> entity page
     pg.fill("#search-q", "RHO")
     pg.wait_for_selector("#search-suggest li[role=option] .curie")
@@ -70,6 +72,7 @@ def test_page_flow(page, web):
     assert "rhodopsin" in pg.inner_text("main .entity-head h1")
     pg.wait_for_selector("[role=tabpanel] table.data")
     shot(pg, "entity_mock")
+    assert "KI-1" not in pg.inner_text("body")
     # relationships tab and evidence drawer
     pg.click("[role=tab]:has-text('Relationships')")
     pg.wait_for_selector("[role=tabpanel]:not([hidden]) button[aria-label^='Evidence for']")
@@ -114,6 +117,8 @@ def test_page_flow(page, web):
     # release and about pages render
     pg.goto(web.url + "/#/release")
     pg.wait_for_selector("#datasets table.data")
+    release_text = pg.inner_text("main")
+    assert "KI-1" not in release_text and "known issue" not in release_text.lower()
     pg.goto(web.url + "/#/about")
     pg.wait_for_selector("main h1")
     csp = [p for p in pg.problems if "Content Security Policy" in p or "Refused" in p]
@@ -129,6 +134,9 @@ def test_mobile_layout(page, web):
     pg.click("#gate-form button[type=submit]")
     pg.wait_for_selector("#search-q")
     assert not pg.is_visible("#chat .chat-input")
+    for sel in ("#chat-toggle", "#logout"):
+        box = pg.locator(sel).bounding_box()
+        assert box and box["x"] + box["width"] <= 390, (sel, box)
     pg.click("#chat-toggle")
     pg.wait_for_selector("#chat.open")
     assert pg.is_visible("#chat .chat-input")

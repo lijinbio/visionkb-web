@@ -130,20 +130,3 @@ export function bar(fraction, title) {
   span.style.width = `${Math.max(1, Math.min(100, 100 * (Number(fraction) || 0)))}%`;
   return h('div', { class: 'bar', title: title || '' , role: 'img', 'aria-label': title || '' }, span);
 }
-
-// KI-1 style known issues: "dataset|group" patterns with a trailing * wildcard.
-let knownIssueGroups = [];
-export function setKnownIssues(issues) {
-  knownIssueGroups = [];
-  for (const ki of issues || []) {
-    for (const g of ki.rod_program_groups || []) knownIssueGroups.push({ id: ki.id, title: ki.title, pattern: g });
-  }
-}
-export function knownIssueFor(datasetId, group) {
-  const key = `${datasetId}|${group}`;
-  return knownIssueGroups.find((k) => (k.pattern.endsWith('*') ? key.startsWith(k.pattern.slice(0, -1)) : key === k.pattern)) || null;
-}
-export function kiChip(datasetId, group) {
-  const ki = knownIssueFor(datasetId, group);
-  return ki ? h('a', { class: 'chip ki', href: '#/release', title: `${ki.id}: ${ki.title} (this group carries a rod program; possible doublets)` }, ki.id) : null;
-}

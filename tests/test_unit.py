@@ -440,3 +440,17 @@ def test_canary_key_never_logged_or_echoed(base_settings, mock_anthropic):
 def test_redact():
     assert redact("x sk-ant-api03-abcDEF_123-xyz y") == "x [redacted] y"
     assert redact("key=supersecretvalue123", key="supersecretvalue123") == "key=[redacted]"
+
+
+def test_no_known_issues_in_page_or_preamble(client):
+    """User decision 2026-11-10: the page does not show release known issues (the proxy still passes them)."""
+    import re
+
+    from visionkb_web.chat import PREAMBLE
+
+    static = Path(__file__).parents[1] / "src" / "visionkb_web" / "static"
+    for f in [static / "index.html", static / "css" / "app.css", *static.glob("js/*.js")]:
+        text = f.read_text()
+        assert not re.search(r"(?i)known.?issue|KI-1|ki-banner", text), f
+    assert not re.search(r"(?i)known.?issue|KI-1", PREAMBLE)
+    assert client.get("/api/kg/release").json()["data"]["known_issues"][0]["id"] == "KI-1"  # envelope unchanged

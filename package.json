@@ -1,7 +1,7 @@
 {
   "name": "visionkb-web-frontend",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Frontend tooling for visionkb-web: vendored marked + DOMPurify, ESLint, node tests (no build step)",
   "license": "MIT",
   "type": "module",

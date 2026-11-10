@@ -4,7 +4,7 @@
 
 Home page for the **VisionKB** knowledge graph of the eye: search, entity pages (genes, retinal and ocular cell types
 and states, diseases, phenotypes, anatomy) with relationships, evidence and HECA atlas expression, the release page
-with its known issues, and a **chat box that answers with your own Claude API key** by calling the read-only
+(counts, edge rule, sources, datasets), and a **chat box that answers with your own Claude API key** by calling the read-only
 VisionKB MCP tools.
 
 - One small FastAPI service (one port) serving a static page (vanilla JavaScript modules, no build step, no CDN).
@@ -58,10 +58,6 @@ claim should cite the release and an `edge_id` or dataset: CURIEs such as `HGNC:
 CP10k, donors; publications). The assistant says so when the graph cannot answer. Check the evidence before relying on
 an answer.
 
-Release known issues are shown in a banner and on the Release page. In `visionkb-2026.11.0`, **KI-1**: small HRCA
-snRNA amacrine subtypes carry a rod program (likely doublets), so rod genes such as RHO and PDE6A have `expressed_in`
-edges to them; such groups carry a KI-1 chip in atlas and evidence tables.
-
 ### What is sent to Anthropic, and what is not
 
 | Sent to Anthropic (your account) | Not sent |
@@ -82,10 +78,10 @@ docker run --rm -p 8780:8780 --read-only --tmpfs /tmp -v /path/to/secrets:/run/s
   -e VISIONKB_API_TOKEN_FILE=/run/secrets/api_token_read \
   -e VISIONKB_WEB_SECRET_FILE=/run/secrets/web_secret \
   -e VISIONKB_WEB_ACCESS_CODES_FILE=/run/secrets/web_access_codes \
-  ghcr.io/lijinbio/visionkb-web:0.0.1
+  ghcr.io/lijinbio/visionkb-web:0.0.2
 
-apptainer pull visionkb-web_0.0.1.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.1
-apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.1.sif
+apptainer pull visionkb-web_0.0.2.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.2
+apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.2.sif
 ```
 
 Use the image by digest in deployments (see the GitHub release notes). [visionkb-deploy](https://github.com/lijinbio/visionkb-deploy)

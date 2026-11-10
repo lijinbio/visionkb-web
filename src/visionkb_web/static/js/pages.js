@@ -1,7 +1,7 @@
 // Routes: #/ (home), #/entity/<curie>, #/evidence/<edge_id>, #/release, #/about.
 import { kg, ok } from './api.js';
 import {
-  h, put, clear, fmt, categoryOf, catChip, entityLink, extLink, copyButton, spinner, errorBox, table, bar, kiChip,
+  h, put, clear, fmt, categoryOf, catChip, entityLink, extLink, copyButton, spinner, errorBox, table, bar,
 } from './ui.js';
 
 export const EXAMPLES = [
@@ -10,7 +10,7 @@ export const EXAMPLES = [
   ['Disease', 'Is PRPF31 linked to retinitis pigmentosa in VisionKB?'],
   ['Datasets', 'Which HECA datasets cover the RPE?'],
   ['Ranking', 'Which major retinal class shows the highest LRAT expression?'],
-  ['Release', 'Which KG release is served, and what are its known issues?'],
+  ['Release', 'Which KG release is served, and what does it contain?'],
 ];
 const QUICK = [['RHO', 'HGNC:10012'], ['retinal rod cell', 'CL:0000604'], ['retinitis pigmentosa', 'MONDO:0019200'],
   ['PRPF31', 'HGNC:15446'], ['retinal pigment epithelium', 'UBERON:0001782'], ['retina', 'UBERON:0000966']];
@@ -241,7 +241,7 @@ function atlasPanel(node) {
         put(out, h('div', { class: 'atlas-ds' },
           h('h3', {}, h('span', { class: 'mono' }, d.id.replace('visionkb:', '')), h('span', { class: 'small muted' }, `${d.rows[0]?.dataset_version || ''} · ${d.rows.length} groups`)),
           table([
-            { label: 'Group', render: (r) => h('span', {}, r.cell_type_id ? h('a', { href: `#/entity/${r.cell_type_id}` }, r.group_label) : r.group_label, ' ', kiChip(r.dataset_id, r.group_label)) },
+            { label: 'Group', render: (r) => (r.cell_type_id ? h('a', { href: `#/entity/${r.cell_type_id}` }, r.group_label) : r.group_label) },
             { label: 'Pseudobulk CP10k', render: (r) => h('div', { class: 'controls' }, bar(d.max ? r.pseudobulk_cp10k / d.max : 0, `${fmt.num(r.pseudobulk_cp10k)} CP10k`), h('span', { class: 'mono small' }, fmt.num(r.pseudobulk_cp10k))) },
             { label: '% expressing', num: true, render: (r) => fmt.pct(r.pct_expressing) },
             { label: 'Mean log1p', num: true, render: (r) => fmt.num(r.mean_log1p_cp10k) },
@@ -274,7 +274,7 @@ function geneSetPanel(node, kind, ctx) {
         { label: 'Gene', render: (r) => h('span', {}, h('a', { href: `#/entity/${r.gene_id}` }, r.symbol || r.gene_id), ' ', h('span', { class: 'small muted' }, fmt.short(r.name, 42))) },
         { label: kind === 'expressed' ? 'Specificity' : 'Score', num: true, render: (r) => fmt.num(r.score) },
         { label: '% expressing', num: true, render: (r) => (r.pct_expressing === undefined ? '–' : fmt.pct(r.pct_expressing)) },
-        { label: 'Best group (dataset)', render: (r) => { const b = r.best_study_result; return b ? h('span', { class: 'small' }, `${b.group_label} · ${String(b.dataset_id).replace('visionkb:', '')} · ${fmt.num(b.pseudobulk_cp10k)} vs ${fmt.num(b.other_max_pseudobulk_cp10k)} (${b.other_max_group})`, ' ', kiChip(b.dataset_id, b.group_label)) : '–'; } },
+        { label: 'Best group (dataset)', render: (r) => { const b = r.best_study_result; return b ? h('span', { class: 'small' }, `${b.group_label} · ${String(b.dataset_id).replace('visionkb:', '')} · ${fmt.num(b.pseudobulk_cp10k)} vs ${fmt.num(b.other_max_pseudobulk_cp10k)} (${b.other_max_group})`) : '–'; } },
         { label: 'Evidence', render: (r) => h('span', { class: 'controls' }, (r.evidence || []).slice(0, 3).map((e) => evidenceButton(e.edge_id, fmt.pred(e.predicate) || 'edge', ctx))) },
       ], rows, { empty: 'No genes recorded.' }));
       const total = env.page?.total;
@@ -290,14 +290,29 @@ function geneSetPanel(node, kind, ctx) {
 }
 
 function datasetsPanel(params) {
-  return async (panel) => {
-    put(panel, spinner());
-    try {
-      const env = await kg('datasets', { ...params, limit: 50 });
-      clear(panel);
-      if (env.status !== 'ok') { put(panel, errorBox(env.error)); return; }
-      put(panel, datasetsTable(env.data || []), warnings(env), releaseNote(env));
-    } catch (e) { put(clear(panel), errorBox(e)); }
+  return (panel) => {
+    const out = h('div');
+    const state = { offset: 0, history: [] };
+    const load = async () => {
+      put(clear(out), spinner());
+      try {
+        const env = await kg('datasets', { ...params, limit: 50, offset: state.offset });
+        clear(out);
+        if (env.status !== 'ok') { put(out, errorBox(env.error)); return; }
+        const rows = env.data || [];
+        const total = env.page?.total;
+        // the API may return fewer rows than limit (size cap): page on from offset + rows returned
+        const next = rows.length && total !== null && total !== undefined && state.offset + rows.length < total ? state.offset + rows.length : null;
+        const prev = h('button', { type: 'button', class: 'btn btn-sm', disabled: !state.history.length }, '← Previous');
+        const nextB = h('button', { type: 'button', class: 'btn btn-sm', disabled: next === null }, 'Next →');
+        prev.addEventListener('click', () => { state.offset = state.history.pop() || 0; load(); });
+        nextB.addEventListener('click', () => { state.history.push(state.offset); state.offset = next; load(); });
+        put(out, datasetsTable(rows), h('div', { class: 'pager' }, prev, nextB,
+          h('span', { class: 'small muted' }, rows.length ? `datasets ${state.offset + 1}–${state.offset + rows.length} of ${fmt.int(total)}` : ''), releaseNote(env)));
+      } catch (e) { put(clear(out), errorBox(e)); }
+    };
+    put(panel, out);
+    return load();
   };
 }
 
@@ -380,7 +395,7 @@ export async function evidenceView(edgeId, container, { titleId } = {}) {
       table([
         { label: 'Dataset', nowrap: true, render: (r) => h('span', { class: 'mono small' }, String(r.dataset_id || (r.supporting_data_set || [])[0] || '–').replace('visionkb:', '')) },
         { label: 'Level', nowrap: true, render: (r) => r.level || '–' },
-        { label: 'Group', nowrap: true, render: (r) => h('span', {}, r.group_label || '–', ' ', kiChip(r.dataset_id, r.group_label)) },
+        { label: 'Group', nowrap: true, render: (r) => r.group_label || '–' },
         { label: 'Cells', num: true, render: (r) => fmt.int(r.n_cells) },
         { label: '% expressing', num: true, render: (r) => fmt.pct(r.pct_expressing) },
         { label: 'Mean log1p', num: true, render: (r) => fmt.num(r.mean_log1p_cp10k) },
@@ -432,13 +447,6 @@ export async function renderRelease(main, ctx) {
         h('dt', {}, 'Edges'), h('dd', {}, fmt.int(r.counts?.edges_total)),
         h('dt', {}, 'Datasets'), h('dd', {}, fmt.int(r.n_datasets)),
         h('dt', {}, 'Code'), h('dd', { class: 'small mono' }, Object.entries(r.code || {}).map(([k, v]) => `${k} ${v.version || ''} (${String(v.git_sha || '').slice(0, 7)})`).join(' · ')))),
-    h('section', { class: 'panel' }, h('h2', {}, 'Known issues'),
-      (r.known_issues || []).length ? (r.known_issues || []).map((ki) => h('div', { class: 'ki-banner' },
-        h('div', {},
-          h('p', {}, h('strong', {}, `${ki.id}: ${ki.title}`), ` — ${ki.status || ''}`),
-          ki.id === 'KI-1' ? h('p', { class: 'small' }, 'Small HRCA snRNA amacrine subtypes carry a rod program (likely doublets or ambient RNA), so rod genes such as RHO and PDE6A have expressed_in edges to them. The edges are reported, not removed. Groups are marked with a KI-1 chip in atlas and evidence tables.') : null,
-          h('p', { class: 'small' }, `${fmt.int(ki.n_groups)} groups · ${fmt.int(ki.n_pairs)} pairs · ${fmt.int(ki.n_study_results)} study results${ki.rod_program_study_results ? ` · ${fmt.int(ki.rod_program_study_results)} with a rod program` : ''}`),
-          (ki.rod_program_groups || []).length ? h('p', { class: 'small mono' }, `Rod-program groups: ${ki.rod_program_groups.map((g) => g.replace('visionkb:', '')).join(', ')}`) : null))) : h('p', { class: 'empty' }, 'None recorded.')),
     h('section', { class: 'panel' }, h('h2', {}, 'Expression edge rule'), h('p', {}, r.expression_edge_rule_text || '–'),
       r.expression_edge_rule?.decision ? h('p', { class: 'small muted' }, `Decision ${r.expression_edge_rule.decision}; levels ${(r.expression_edge_rule.levels || []).join(', ')}.`) : null),
     h('div', { class: 'grid-2' },
