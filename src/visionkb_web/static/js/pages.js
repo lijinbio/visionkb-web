@@ -103,23 +103,31 @@ export function searchBox({ autofocus = false } = {}) {
 }
 
 // ---- home ---------------------------------------------------------------------------------------------------
-export function renderHome(main, ctx) {
-  const rel = ctx.release?.data;
-  const nodes = rel?.counts?.nodes_by_category || {};
-  const stats = rel ? [
+export function fillStats(el, release) {
+  const rel = release?.data;
+  if (!el || !rel) return;
+  const nodes = rel.counts?.nodes_by_category || {};
+  const stats = [
     [fmt.int(nodes['biolink:Gene']), 'genes'],
     [fmt.int((nodes['biolink:Cell'] || 0) + (nodes['visionkb:CellState'] || 0)), 'cell types and states'],
     [fmt.int((nodes['biolink:Disease'] || 0) + (nodes['biolink:PhenotypicFeature'] || 0)), 'diseases and phenotypes'],
     [fmt.int(rel.counts?.edges_total), 'edges'],
     [fmt.int(rel.n_datasets ?? (rel.atlases || []).length), 'HECA atlases'],
-  ] : [];
-  put(main, 
+  ];
+  clear(el).append(...stats.map(([v, k]) => h('div', { class: 'stat' }, h('div', { class: 'v' }, v), h('div', { class: 'k' }, k))));
+  el.hidden = false;
+}
+
+export function renderHome(main, ctx) {
+  const statsEl = h('div', { class: 'stats', id: 'home-stats', hidden: true });
+  fillStats(statsEl, ctx.release);
+  put(main,
     h('section', { class: 'hero' },
       h('h1', {}, 'The eye, as a ', h('span', { class: 'accent' }, 'knowledge graph')),
       h('p', { class: 'lead' }, 'Genes, retinal and ocular cell types and states, diseases and phenotypes, linked by typed Biolink relationships with their evidence: HECA single-cell atlas summaries and curated sources with PMIDs.'),
       searchBox({ autofocus: true }),
       h('div', { class: 'quick' }, h('span', { class: 'muted' }, 'Try:'), QUICK.map(([label, id]) => h('a', { class: 'chip', href: `#/entity/${id}` }, label)))),
-    stats.length ? h('div', { class: 'stats' }, stats.map(([v, k]) => h('div', { class: 'stat' }, h('div', { class: 'v' }, v), h('div', { class: 'k' }, k)))) : null,
+    statsEl,
     h('section', { class: 'panel' },
       h('div', { class: 'panel-head' }, h('h2', {}, 'Ask a question'), h('span', { class: 'small muted' }, 'Answers come from the graph through tools, with your own Claude API key.')),
       h('div', { class: 'examples' }, EXAMPLES.map(([tag, q]) => {
@@ -358,7 +366,7 @@ export async function evidenceView(edgeId, container, { titleId } = {}) {
     clear(container);
     if (env.status !== 'ok') { put(container, h('h2', { id: titleId }, edgeId), errorBox(env.error)); return; }
     const { edge = {}, study_results: srs = [], publications: pubs = [] } = env.data || {};
-    put(container, 
+    put(container,
       h('h2', { id: titleId, class: 'edge-line' }, entityLink(edge.subject, { showId: false }), h('span', { class: 'pred' }, fmt.pred(edge.predicate)), entityLink(edge.object, { showId: false })),
       h('dl', { class: 'kv' },
         h('dt', {}, 'Edge'), h('dd', {}, h('span', { class: 'curie' }, edge.edge_id || edgeId), copyButton(edge.edge_id || edgeId)),
@@ -370,9 +378,9 @@ export async function evidenceView(edgeId, container, { titleId } = {}) {
         h('dt', {}, 'Release'), h('dd', { class: 'mono small' }, env.kg_release || '–')),
       h('h3', {}, `Study results (${fmt.int(env.page?.total ?? srs.length)})`),
       table([
-        { label: 'Dataset', render: (r) => h('span', { class: 'mono small' }, String(r.dataset_id || (r.supporting_data_set || [])[0] || '–').replace('visionkb:', '')) },
-        { label: 'Level', render: (r) => r.level || '–' },
-        { label: 'Group', render: (r) => h('span', {}, r.group_label || '–', ' ', kiChip(r.dataset_id, r.group_label)) },
+        { label: 'Dataset', nowrap: true, render: (r) => h('span', { class: 'mono small' }, String(r.dataset_id || (r.supporting_data_set || [])[0] || '–').replace('visionkb:', '')) },
+        { label: 'Level', nowrap: true, render: (r) => r.level || '–' },
+        { label: 'Group', nowrap: true, render: (r) => h('span', {}, r.group_label || '–', ' ', kiChip(r.dataset_id, r.group_label)) },
         { label: 'Cells', num: true, render: (r) => fmt.int(r.n_cells) },
         { label: '% expressing', num: true, render: (r) => fmt.pct(r.pct_expressing) },
         { label: 'Mean log1p', num: true, render: (r) => fmt.num(r.mean_log1p_cp10k) },
@@ -414,7 +422,7 @@ export async function renderRelease(main, ctx) {
   const r = env.data;
   const nodes = Object.entries(r.counts?.nodes_by_category || {}).sort((a, b) => b[1] - a[1]);
   const edges = Object.entries(r.counts?.edges_by_predicate || {}).sort((a, b) => b[1] - a[1]);
-  put(main, 
+  put(main,
     h('section', { class: 'panel' },
       h('div', { class: 'panel-head' }, h('h1', {}, r.kg_release), h('span', { class: `chip ${r.validation?.status === 'pass' ? 'ok' : ''}` }, `validation ${r.validation?.status || '–'}`)),
       h('dl', { class: 'kv' },
@@ -453,7 +461,7 @@ export async function renderRelease(main, ctx) {
 export function renderAbout(main, ctx) {
   const s = ctx.session || {};
   const lim = s.limits || {};
-  put(main, 
+  put(main,
     h('section', { class: 'panel' }, h('h1', {}, 'About VisionKB'),
       h('p', {}, 'VisionKB is a knowledge graph of the eye built by the Rui Chen Lab: genes (HGNC), retinal and ocular cell types and states (CL), anatomy (UBERON), diseases (MONDO) and phenotypes (HP), linked by Biolink 4.4.6 relationships. Expression edges come from Human Eye Cell Atlas (HECA) summaries; disease edges from curated sources with PMIDs. Every edge carries an edge_id, a knowledge level and its evidence.'),
       h('p', {}, 'This page reads the graph through a read-only proxy to the VisionKB API; the browser never sees the API token.')),

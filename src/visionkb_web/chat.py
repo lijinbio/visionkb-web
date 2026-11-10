@@ -215,6 +215,7 @@ async def run_chat(
     n_calls, rounds, releases = 0, 0, []
     stop_reason = None
     final_round = not tool_defs
+    emitted = False
     while True:
         rounds += 1
         kwargs: dict[str, Any] = {"model": model, "max_tokens": max_output_tokens, "system": system, "messages": convo}
@@ -224,8 +225,12 @@ async def run_chat(
                 kwargs["tool_choice"] = {"type": "none"}
         try:
             async with client.messages.stream(**kwargs) as stream:
+                round_text = False
                 async for text in stream.text_stream:
                     if text:
+                        if not round_text and emitted:  # text of a later round starts a new paragraph
+                            text = "\n\n" + text.lstrip("\n")
+                        round_text = emitted = True
                         yield "text", {"delta": text}
                 final = await stream.get_final_message()
         except anthropic.APIError as exc:

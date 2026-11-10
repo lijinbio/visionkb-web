@@ -311,6 +311,7 @@ def test_chat_two_tool_sse_sequence(client, mock_anthropic):
     assert results[0]["returned"] == 1 and results[0]["id"] == calls[0]["id"]
     answer = "".join(d["delta"] for e, d in events if e == "text")
     assert EDGE in answer and RELEASE in answer
+    assert "Let me look up RHO. \n\n**RHO**" in answer  # rounds are separated by a paragraph break
     done = events[-1][1]
     assert done["tool_calls"] == 2 and done["stop_reason"] == "end_turn" and done["kg_releases"] == [RELEASE]
     assert done["usage"]["output_tokens"] == 3 * 42 and done["usage"]["cache_creation_input_tokens"] > 0

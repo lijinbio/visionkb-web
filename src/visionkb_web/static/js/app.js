@@ -1,7 +1,7 @@
 // Boot, access gate, release badge and known-issues banner, hash router, evidence drawer.
 import * as api from './api.js';
 import { createChat } from './chat.js';
-import { renderHome, renderEntity, renderRelease, renderAbout, renderEvidencePage, evidenceView } from './pages.js';
+import { renderHome, renderEntity, renderRelease, renderAbout, renderEvidencePage, evidenceView, fillStats } from './pages.js';
 import { h, clear, errorBox, setKnownIssues } from './ui.js';
 
 const $ = (id) => document.getElementById(id);
@@ -44,6 +44,7 @@ function setRelease(env) {
   setKnownIssues(env.data?.known_issues || []);
   $('release-badge').querySelector('.label').textContent = env.kg_release;
   renderBanner(env.data?.known_issues || []);
+  fillStats(document.getElementById('home-stats'), env);
 }
 function renderBanner(issues) {
   const el = $('known-issues');

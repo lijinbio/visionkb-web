@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['src/visionkb_web/static/js/vendor/**', 'node_modules/**', '.venv/**'] },
+  { ignores: ['**/static/js/vendor/**', 'node_modules/**', '.venv/**', 'build/**', 'dist/**'] },
   js.configs.recommended,
   {
     files: ['src/visionkb_web/static/js/**/*.js'],
