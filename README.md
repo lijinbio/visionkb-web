@@ -65,8 +65,8 @@ an answer.
   The default is `clamp(400px, 34vw, 640px)`; the chat stays between 360 px and 70% of the window and leaves the page
   at least 480 px.
 - **Expand** (header button): the chat fills the content area with a centred reading column; Esc returns to docked.
-- **Collapse** (header button, or **Ctrl/⌘+J**): the panel hides and an *Ask VisionKB* tab on the right edge brings it
-  back; the conversation is kept. Ctrl/⌘+J works from the page and the chat box, not while typing in other fields.
+- **Collapse** (header button, or **Ctrl/⌘+J**): the panel hides; the *Ask VisionKB* button at the bottom right or in
+  the top bar brings it back docked, with the conversation kept. Ctrl/⌘+J works from the page and the chat box, not while typing in other fields.
 - **Full page**: the header link opens `#/chat` in the same tab with the same conversation; clicking an identifier in an
   answer goes to its page with the chat docked.
 - Width and mode are remembered in this browser (`localStorage` key `visionkb-web.layout`, UI preferences only; the key

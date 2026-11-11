@@ -47,6 +47,7 @@ const ICONS = {
   expand: ['M4 9V4h5', 'M20 9V4h-5', 'M4 15v5h5', 'M20 15v5h-5'],
   restore: ['M9 4v5H4', 'M15 4v5h5', 'M9 20v-5H4', 'M15 20v-5h5'],
   collapse: ['M13 6l6 6-6 6', 'M5 6l6 6-6 6'],
+  chat: ['M21 12a8 8 0 0 1-11.6 7.1L4 20l1.2-4.4A8 8 0 1 1 21 12z', 'M8.5 11h7', 'M8.5 14.5h4.5'],
 };
 export function icon(name) {
   const svg = document.createElementNS(SVG, 'svg');
@@ -82,7 +83,10 @@ export function createLayout(panel, hooks) {
   const pageLink = h('a', { href: '#/chat', class: 'btn btn-ghost btn-icon chat-mode-btn chat-page-link', title: 'Open the chat as a full page', 'aria-label': 'Open the chat as a full page' }, icon('page'));
   const expandBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-icon chat-mode-btn', id: 'chat-expand', 'aria-pressed': 'false', 'aria-controls': 'chat' });
   const collapseBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-icon chat-mode-btn', id: 'chat-collapse', title: 'Collapse the chat (Ctrl/⌘+J)', 'aria-label': 'Collapse the chat', 'aria-expanded': 'true', 'aria-controls': 'chat' }, icon('collapse'));
-  const restoreBtn = h('button', { type: 'button', class: 'chat-restore', id: 'chat-restore', title: 'Show the chat (Ctrl/⌘+J)', 'aria-controls': 'chat', 'aria-expanded': 'false' }, 'Ask VisionKB');
+  // shown only while the chat is collapsed (desktop): a floating pill at the bottom right and a top-bar button
+  const restoreAttrs = { type: 'button', title: 'Show the chat (Ctrl/⌘+J)', 'aria-label': 'Ask VisionKB: show the chat', 'aria-controls': 'chat', 'aria-expanded': 'false' };
+  const restoreBtn = h('button', { ...restoreAttrs, class: 'chat-restore', id: 'chat-restore' }, icon('chat'), h('span', {}, 'Ask VisionKB'));
+  const topRestoreBtn = h('button', { ...restoreAttrs, class: 'btn btn-primary btn-sm chat-top-restore', id: 'chat-top-restore' }, icon('chat'), h('span', {}, 'Ask VisionKB'));
   const handle = h('div', { class: 'chat-resize', id: 'chat-resize', role: 'separator', 'aria-orientation': 'vertical', tabindex: '0',
     'aria-label': 'Resize the chat panel', 'aria-controls': 'chat', title: 'Drag to resize · double-click to reset · arrow keys' }, h('span', { class: 'grip', 'aria-hidden': 'true' }));
 
@@ -116,7 +120,7 @@ export function createLayout(panel, hooks) {
     expandBtn.title = label;
     expandBtn.replaceChildren(icon(big ? 'restore' : 'expand'));
     collapseBtn.setAttribute('aria-expanded', String(mode !== 'collapsed'));
-    restoreBtn.setAttribute('aria-expanded', String(mode !== 'collapsed'));
+    for (const b of [restoreBtn, topRestoreBtn]) b.setAttribute('aria-expanded', String(mode !== 'collapsed'));
     requestAnimationFrame(updateAria);
   }
 
@@ -160,7 +164,7 @@ export function createLayout(panel, hooks) {
     if (mode === 'page') leavePage('collapsed');
     else setMode('collapsed');
   });
-  restoreBtn.addEventListener('click', () => setMode('docked'));
+  for (const b of [restoreBtn, topRestoreBtn]) b.addEventListener('click', () => setMode('docked'));
 
   // ---- pointer resize (rAF-throttled; the main column reflows once per frame) ----
   let dragging = false;
@@ -232,6 +236,8 @@ export function createLayout(panel, hooks) {
 
   panel.prepend(handle);
   body.append(restoreBtn, live);
+  const topbarRight = document.querySelector('.topbar-right');
+  if (topbarRight) topbarRight.insertBefore(topRestoreBtn, document.getElementById('logout'));
   applyWidth();
   setMode(mode, { focus: false, persist: false, announce: false });
   return { buttons: [pageLink, expandBtn, collapseBtn], onRoute, setMode, setWidth, resetWidth, get mode() { return mode; } };

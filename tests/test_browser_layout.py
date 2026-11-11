@@ -27,17 +27,24 @@ def browser():
         b.close()
 
 
+_STATE = {}  # one login per module: later contexts reuse the session cookie (the login limiter allows 10 per 10 min)
+
+
 def open_page(browser, web, width=1366, height=900):
-    ctx = browser.new_context(viewport={"width": width, "height": height})
+    state = _STATE.get(web.url)
+    ctx = browser.new_context(viewport={"width": width, "height": height}, storage_state=state)
     pg = ctx.new_page()
     pg.problems = []
     pg.on("console", lambda m: pg.problems.append(m.text) if m.type == "error" else None)
     pg.on("pageerror", lambda e: pg.problems.append(f"pageerror: {e}"))
     pg.goto(web.url + "/")
-    pg.fill("#gate-code", ACCESS_CODE)
-    pg.click("#gate-form button[type=submit]")
-    pg.wait_for_selector("#gate", state="hidden")
+    if state is None:
+        pg.fill("#gate-code", ACCESS_CODE)
+        pg.click("#gate-form button[type=submit]")
+        pg.wait_for_selector("#gate", state="hidden")
+        _STATE[web.url] = {"cookies": ctx.storage_state()["cookies"], "origins": []}  # cookie only, no storage
     pg.wait_for_selector("#chat-resize", state="attached")
+    pg.wait_for_selector("main h1")
     return pg
 
 
@@ -165,13 +172,33 @@ def test_modes_esc_and_shortcut(browser, web):
     pg.keyboard.press("Escape")
     assert mode(pg) == "docked" and pg.is_visible("main") and active_id(pg) == "chat-expand"
     expect(pg.locator("#chat-layout-status")).to_have_text("Chat docked")
-    # collapsed
+    # collapsed: a floating pill (bottom right) and a top-bar button, both horizontal, both restore docked
+    assert not pg.is_visible("#chat-restore") and not pg.is_visible("#chat-top-restore")
     pg.click("#chat-collapse")
-    assert mode(pg) == "collapsed" and not pg.is_visible("#chat") and pg.is_visible("#chat-restore")
-    assert active_id(pg) == "chat-restore" and pg.get_attribute("#chat-restore", "aria-expanded") == "false"
+    assert mode(pg) == "collapsed" and not pg.is_visible("#chat")
+    assert pg.is_visible("#chat-restore") and pg.is_visible("#chat-top-restore")
+    assert active_id(pg) == "chat-restore"
+    for sel in ("#chat-restore", "#chat-top-restore"):
+        assert pg.get_attribute(sel, "aria-expanded") == "false" and "Ask VisionKB" in pg.get_attribute(
+            sel, "aria-label"
+        )
+        assert pg.inner_text(sel).strip() == "Ask VisionKB"
+        style = pg.evaluate(
+            f"(() => {{ const s = getComputedStyle(document.querySelector('{sel}')); return [s.writingMode, s.transform]; }})()"
+        )
+        assert style == ["horizontal-tb", "none"], (sel, style)  # no rotated text
+    pill = pg.locator("#chat-restore").bounding_box()
+    assert pill["height"] >= 44 and pill["width"] > pill["height"]
+    assert 1366 - (pill["x"] + pill["width"]) < 40 and 900 - (pill["y"] + pill["height"]) < 40  # bottom right
+    assert pg.locator("#chat-top-restore").bounding_box()["y"] < 56  # in the top bar
     assert pg.locator("main").bounding_box()["width"] >= 1360
     pg.click("#chat-restore")
     assert mode(pg) == "docked" and pg.is_visible("#chat") and active_id(pg) == "chat-input"
+    assert not pg.is_visible("#chat-restore") and not pg.is_visible("#chat-top-restore")
+    pg.click("#chat-collapse")
+    pg.fill("#search-q", "")  # page state kept
+    pg.click("#chat-top-restore")
+    assert mode(pg) == "docked" and active_id(pg) == "chat-input"
     # Ctrl+J from the page and from the chat box toggles; not while typing in the search box
     pg.locator("main h1").first.click()
     pg.keyboard.press("Control+j")
@@ -234,6 +261,20 @@ def test_chat_route_readability_and_links(browser, web):
     clean(pg)
 
 
+def test_collapse_keeps_the_conversation(browser, web):
+    pg = open_page(browser, web, 1366, 900)
+    use_key(pg)
+    ask(pg)
+    pg.click("#chat-collapse")
+    pg.click("#chat-top-restore")
+    assert pg.locator(".msg").count() == 2
+    pg.keyboard.press("Control+j")
+    assert mode(pg) == "collapsed"
+    pg.keyboard.press("Control+j")
+    assert mode(pg) == "docked" and pg.locator(".msg").count() == 2
+    clean(pg)
+
+
 def test_key_never_in_local_storage(browser, web):
     pg = open_page(browser, web, 1366, 900)
     use_key(pg)
@@ -253,7 +294,14 @@ def test_key_never_in_local_storage(browser, web):
 
 def test_mobile_slide_over_unchanged(browser, web):
     pg = open_page(browser, web, 390, 844)
-    for sel in ("#chat-resize", "#chat-expand", "#chat-collapse", "a.chat-page-link", "#chat-restore"):
+    for sel in (
+        "#chat-resize",
+        "#chat-expand",
+        "#chat-collapse",
+        "a.chat-page-link",
+        "#chat-restore",
+        "#chat-top-restore",
+    ):
         assert not pg.is_visible(sel), sel
     assert not pg.is_visible("#chat .chat-input")
     pg.click("#chat-toggle")

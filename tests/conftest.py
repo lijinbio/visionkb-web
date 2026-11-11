@@ -78,7 +78,7 @@ def client(base_settings):
         yield c
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def web(base_settings):
     """The web app on a real port (lifespan on: the MCP child runs) for the browser tests."""
     with ServerThread(create_app(base_settings), lifespan="on") as srv:

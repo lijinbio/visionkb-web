@@ -10,9 +10,9 @@ Chat panel layout (frontend only; the backend is unchanged).
   The edge is a focusable `role="separator"` with `aria-valuenow/min/max`: arrow keys +-16 px (Shift +-64), Home/End =
   max/min, Enter resets.
 - Modes from the chat header: docked (default), expanded (chat fills the content area, ~80ch column; Esc returns),
-  collapsed (an *Ask VisionKB* tab on the right edge restores it). Ctrl/Cmd+J toggles collapsed/docked (not while
-  typing in other fields). Focus moves to the input / the restore tab / the expand button; mode changes are announced
-  in an aria-live region.
+  collapsed (a floating *Ask VisionKB* pill at the bottom right, >= 44 px, and an *Ask VisionKB* button in the top
+  bar restore it docked; horizontal text only). Ctrl/Cmd+J toggles collapsed/docked (not while typing in other
+  fields). Focus moves to the input / the pill / the expand button; mode changes are announced in an aria-live region.
 - `#/chat`: the chat as a full page (same tab and history); identifiers clicked in it open their page with the chat
   docked. Linked from the chat header.
 - Width and mode persist in `localStorage` (`visionkb-web.layout`, `{width, mode}` only; the Claude key stays in
