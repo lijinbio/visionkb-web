@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.0.4 - 2026-11-11
+
+Chat layout, after user feedback on 0.0.3 (frontend only).
+
+- One **Expand** control: it opens the full page `#/chat`, so the URL, Back and bookmarks work. The separate
+  pop-out link and the in-place expanded mode are gone. Modes are docked, full page and collapsed. Leaving `#/chat`
+  (the pressed Expand/Dock button, Esc, Back, or an identifier link) returns to the docked layout on the page the
+  chat was opened from. A stored `mode: "expanded"` from 0.0.3 migrates to docked. Ctrl/Cmd+J is unchanged
+  (collapsed <-> docked; from the full page it collapses and returns).
+- Full-page column `clamp(45rem, 60vw, 60rem)` (720-960 px at the browser's default 16 px font; sizes are in units of
+  the browser font size, so they follow the user's font size and zoom), centred. Message text on the full page is
+  17 px (1.0625 x 16 px) with line-height 1.6; the docked panel text is unchanged. No separate prose cap: paragraphs,
+  lists, tables, code and tool traces use the full column, and tables/code/traces scroll horizontally when wider.
+- The column is resizable from both edges (symmetric) with the same pointer, keyboard and ARIA rules as the docked
+  handle (arrows ±16 px per edge, Shift ±64, Home/End = max/min, Enter or double-click = reset); range 35rem-87.5rem
+  (560-1400 px) and at most the viewport − 64 px; persisted as `fullWidth` in `visionkb-web.layout`, separately from the
+  docked `width`.
+- Docked panel: the maximum is now 55% of the window (was 70%; the page keeps ≥ 480 px, the chat ≥ 360 px); the
+  default stays `clamp(400px, 34vw, 640px)`. Stored widths above the current maximum (from 0.0.3) are re-clamped and
+  rewritten on load (desktop only).
+- The page root font size is `93.75%` instead of a fixed `15px`: identical at default settings, but the site now
+  follows the browser's font-size preference.
+- Nothing is written to localStorage until the layout is changed.
+- Fixed: no amber focus outline on `<main>` after route changes.
+
 ## 0.0.3 - 2026-11-11
 
 Chat panel layout (frontend only; the backend is unchanged).

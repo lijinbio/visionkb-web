@@ -81,13 +81,13 @@ function route() {
   } else {
     main.append(h('section', { class: 'panel' }, h('h1', {}, 'Not found'), h('p', {}, h('a', { href: '#/' }, 'Back to the home page'))));
   }
-  ctx.chat?.layout.onRoute(hash, { initial: firstRoute });
   if (nav === 'chat') document.title = 'Chat — VisionKB';
   for (const a of document.querySelectorAll('[data-nav]')) {
     if (a.dataset.nav === nav && (nav !== 'home' || /^#\/?$/.test(hash))) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
   if (!firstRoute) { window.scrollTo(0, 0); main.focus({ preventScroll: true }); }
+  ctx.chat?.layout.onRoute(hash, { initial: firstRoute });   // after the focus move: the layout may move it again
   firstRoute = false;
 }
 

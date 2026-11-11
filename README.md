@@ -62,15 +62,19 @@ an answer.
 
 - **Width**: drag the panel's left edge (a grip appears on hover), or focus the edge (Tab) and use the arrow keys
   (Shift for bigger steps; Home = widest, End = narrowest). Double-click the edge (or press Enter on it) to reset.
-  The default is `clamp(400px, 34vw, 640px)`; the chat stays between 360 px and 70% of the window and leaves the page
+  The default is `clamp(400px, 34vw, 640px)`; the chat stays between 360 px and 55% of the window and leaves the page
   at least 480 px.
-- **Expand** (header button): the chat fills the content area with a centred reading column; Esc returns to docked.
+- **Expand** (header button): opens the chat as a full page (`#/chat`, same tab and conversation; the URL can be
+  bookmarked). The centred column defaults to `clamp(45rem, 60vw, 60rem)` (720-960 px at the default browser font
+  size; it follows font size and zoom) with 17 px message text; drag either edge (or use the arrow keys on it) to make
+  it wider or narrower (560-1400 px, at most the window − 64 px); double-click or Enter resets. Text, tables, code and
+  tool traces use the full column (wide tables and code scroll sideways). Esc, Back, the pressed Expand button or an
+  identifier link return to the docked chat on the page you came from.
 - **Collapse** (header button, or **Ctrl/⌘+J**): the panel hides; the *Ask VisionKB* button at the bottom right or in
-  the top bar brings it back docked, with the conversation kept. Ctrl/⌘+J works from the page and the chat box, not while typing in other fields.
-- **Full page**: the header link opens `#/chat` in the same tab with the same conversation; clicking an identifier in an
-  answer goes to its page with the chat docked.
-- Width and mode are remembered in this browser (`localStorage` key `visionkb-web.layout`, UI preferences only; the key
-  and the chat are never stored there). Below 900 px the chat is a full-screen panel you open and close.
+  the top bar brings it back docked, with the conversation kept. Ctrl/⌘+J works from the page and the chat box, not
+  while typing in other fields.
+- Widths and mode are remembered in this browser (`localStorage` key `visionkb-web.layout`: `{width, fullWidth, mode}`,
+  UI preferences only; the key and the chat are never stored there). Below 900 px the chat is a full-screen panel you open and close.
 
 ### What is sent to Anthropic, and what is not
 
@@ -92,10 +96,10 @@ docker run --rm -p 8780:8780 --read-only --tmpfs /tmp -v /path/to/secrets:/run/s
   -e VISIONKB_API_TOKEN_FILE=/run/secrets/api_token_read \
   -e VISIONKB_WEB_SECRET_FILE=/run/secrets/web_secret \
   -e VISIONKB_WEB_ACCESS_CODES_FILE=/run/secrets/web_access_codes \
-  ghcr.io/lijinbio/visionkb-web:0.0.3
+  ghcr.io/lijinbio/visionkb-web:0.0.4
 
-apptainer pull visionkb-web_0.0.3.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.3
-apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.3.sif
+apptainer pull visionkb-web_0.0.4.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.4
+apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.4.sif
 ```
 
 Use the image by digest in deployments (see the GitHub release notes). [visionkb-deploy](https://github.com/lijinbio/visionkb-deploy)
@@ -156,7 +160,7 @@ kg_releases, history_dropped, elapsed_s}` · `error {code, message}`. Every non-
 
 ## Security
 
-- **Claude key**: browser `sessionStorage` only (`localStorage` holds only the panel layout, `{width, mode}`); sent in the `X-Anthropic-Key` header to this server and used for that
+- **Claude key**: browser `sessionStorage` only (`localStorage` holds only the panel layout, `{width, fullWidth, mode}`); sent in the `X-Anthropic-Key` header to this server and used for that
   one upstream call. Never stored, cached, logged, put in metrics, passed to the MCP child or echoed in errors: every
   log line goes through a formatter that redacts `sk-ant-…` patterns and the key of the request being served;
   request headers are never logged. A canary-key test checks logs (at DEBUG), responses and app state.
@@ -179,7 +183,7 @@ See [SECURITY.md](SECURITY.md) for reporting.
 |---|---|---|
 | Unit | `uv run pytest` | allowlist (no `/proposals`, GET only), envelope pass-through, access codes + CSRF, CSP and headers, limits, `/readyz`, MCP child restart and clean environment, models default rule, SSE sequence of a two-tool conversation and the tool-call cap against a mock Anthropic server, history truncation, canary key never in logs or responses; the real `visionkb-kg-mcp` runs against a fake API |
 | JavaScript | `npm ci && npm test && npm run lint` | DOMPurify/marked on a hostile answer (jsdom), identifier links; ESLint |
-| Browser | `VISIONKB_BROWSER=1 uv run pytest tests/test_browser.py tests/test_browser_layout.py` | Chromium: gate, search, entity page, evidence drawer, chat with notice and tool trace, hostile answer inert; chat layout (default width at 1366/1920 px, drag and keyboard resize with bounds, reset, persistence, expanded/collapsed/Esc/Ctrl+J, `#/chat`, key never in localStorage); mobile; no CSP violations |
+| Browser | `VISIONKB_BROWSER=1 uv run pytest tests/test_browser.py tests/test_browser_layout.py` | Chromium: gate, search, entity page, evidence drawer, chat with notice and tool trace, hostile answer inert; chat layout (default width at 1366/1920 px, drag and keyboard resize with bounds, reset, persistence, Expand = `#/chat` with Esc/Back/link return, full-page column widths and resize, migration, collapsed/Ctrl+J, key never in localStorage); mobile; no CSP violations |
 | Integration | `VISIONKB_IT_WEB_URL=… uv run pytest tests/integration` | a running instance against a real API (see the test's docstring) |
 | Container | CI job `container` | image smoke test with the fake API and the mock provider |
 
