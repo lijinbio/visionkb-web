@@ -19,6 +19,14 @@ export default [
     },
   },
   {
+    // layout.js alone may use localStorage, for UI preferences ({width, mode}); never the Claude key or the chat.
+    files: ['src/visionkb_web/static/js/layout.js'],
+    rules: {
+      'no-restricted-properties': ['error', { object: 'document', property: 'write' }],
+      'no-restricted-globals': ['error', 'eval'],
+    },
+  },
+  {
     files: ['tests/js/**/*.mjs', 'scripts/**/*.mjs', 'eslint.config.js'],
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: { ...globals.node } },
   },

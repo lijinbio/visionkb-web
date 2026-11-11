@@ -31,7 +31,7 @@ function openEvidence(edgeId) {
   evidenceView(edgeId, body, {});
 }
 $('drawer-backdrop').addEventListener('click', closeDrawer);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('drawer').hidden) closeDrawer(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('drawer').hidden) { e.preventDefault(); closeDrawer(); } });
 document.addEventListener('click', (e) => {
   const a = e.target.closest && e.target.closest('a[data-edge]');
   if (a && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); openEvidence(a.dataset.edge); }
@@ -66,6 +66,7 @@ const ROUTES = [
   [/^#\/evidence\/(.+)$/, 'home', (m) => renderEvidencePage(main, decodeURIComponent(m[1]))],
   [/^#\/release\/?$/, 'release', () => renderRelease(main, ctx)],
   [/^#\/about\/?$/, 'about', () => renderAbout(main, ctx)],
+  [/^#\/chat\/?$/, 'chat', () => renderChatPage(main)],
 ];
 function route() {
   const hash = location.hash || '#/';
@@ -80,12 +81,20 @@ function route() {
   } else {
     main.append(h('section', { class: 'panel' }, h('h1', {}, 'Not found'), h('p', {}, h('a', { href: '#/' }, 'Back to the home page'))));
   }
+  ctx.chat?.layout.onRoute(hash, { initial: firstRoute });
+  if (nav === 'chat') document.title = 'Chat — VisionKB';
   for (const a of document.querySelectorAll('[data-nav]')) {
     if (a.dataset.nav === nav && (nav !== 'home' || /^#\/?$/.test(hash))) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   }
   if (!firstRoute) { window.scrollTo(0, 0); main.focus({ preventScroll: true }); }
   firstRoute = false;
+}
+
+// #/chat: the chat panel fills the page (layout.js); main keeps a short note for small screens.
+function renderChatPage(target) {
+  target.append(h('section', { class: 'panel' }, h('h1', {}, 'Chat'),
+    h('p', {}, 'The conversation is open in the chat panel. ', h('a', { href: '#/' }, 'Back to the home page'))));
 }
 
 // ---- access gate ----

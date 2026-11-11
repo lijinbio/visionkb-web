@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.0.3 - 2026-11-11
+
+Chat panel layout (frontend only; the backend is unchanged).
+
+- Default width `clamp(400px, 34vw, 640px)` (was 440 px, 380 px below 1080 px).
+- Resizable: drag the panel's left edge (pointer events, rAF-throttled, col-resize cursor, grip on hover/focus);
+  bounds chat >= 360 px, page >= 480 px, chat <= 70% of the window, re-clamped on window resize; double-click resets.
+  The edge is a focusable `role="separator"` with `aria-valuenow/min/max`: arrow keys +-16 px (Shift +-64), Home/End =
+  max/min, Enter resets.
+- Modes from the chat header: docked (default), expanded (chat fills the content area, ~80ch column; Esc returns),
+  collapsed (an *Ask VisionKB* tab on the right edge restores it). Ctrl/Cmd+J toggles collapsed/docked (not while
+  typing in other fields). Focus moves to the input / the restore tab / the expand button; mode changes are announced
+  in an aria-live region.
+- `#/chat`: the chat as a full page (same tab and history); identifiers clicked in it open their page with the chat
+  docked. Linked from the chat header.
+- Width and mode persist in `localStorage` (`visionkb-web.layout`, `{width, mode}` only; the Claude key stays in
+  sessionStorage, checked by a browser test).
+- Answers: tables scroll inside the message, CURIEs and edge ids do not wrap (edge ids shown as
+  `visionkb:e-xxxxxxxx…xxxx`, full id in the title and the copied text), tool trace collapsed by default, the input
+  grows to about 8 lines.
+- Below 900 px: unchanged full-screen slide-over; no resize handle; open/close only (Ctrl/Cmd+J too).
+- CSP unchanged: sizes are set through the CSSOM (`style.setProperty('--chat-w', …)`), no style attributes.
+
 ## 0.0.2 - 2026-11-10
 
 - The page no longer shows release known issues: no banner, no Known issues section on the Release page, no KI chips

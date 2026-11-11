@@ -34,6 +34,12 @@ function hook() {
   });
 }
 
+// Edge ids are 52 characters: chat links show a middle ellipsis (full id in the title, data-edge and the copied text).
+export function shortEdge(id) {
+  const m = /^(visionkb:e-)([0-9a-f]+)$/.exec(id);
+  return m && m[2].length > 14 ? `${m[1]}${m[2].slice(0, 8)}…${m[2].slice(-4)}` : id;
+}
+
 // Order matters: edges and datasets before generic CURIEs.
 const ID_RE = /\b(visionkb:e-[0-9a-f]{8,64})\b|\b(visionkb:ds-[a-z0-9][a-z0-9-]*)\b|\bPMID:\s?(\d{4,9})\b|\b((?:HGNC|CL|UBERON|MONDO|HP|NCBITaxon|EFO|NCBIGene|GO|CHEBI|PR|ORPHA|OMIM):[A-Za-z0-9_]+|visionkb:(?!e-|ds-)[A-Za-z0-9][A-Za-z0-9_.-]*[A-Za-z0-9])\b/g;
 
@@ -48,7 +54,7 @@ function linkifyText(doc, text) {
     const a = doc.createElement('a');
     a.className = 'kg-link';
     a.textContent = m[0];
-    if (m[1]) { a.setAttribute('href', `#/evidence/${m[1]}`); a.dataset.edge = m[1]; a.title = 'Open the evidence for this edge'; }
+    if (m[1]) { a.setAttribute('href', `#/evidence/${m[1]}`); a.dataset.edge = m[1]; a.textContent = shortEdge(m[1]); a.title = `${m[1]}: open the evidence`; }
     else if (m[2]) { a.setAttribute('href', '#/release'); a.title = 'Datasets of this release'; }
     else if (m[3]) { a.setAttribute('href', `https://pubmed.ncbi.nlm.nih.gov/${m[3]}/`); a.target = '_blank'; a.rel = 'noopener noreferrer'; }
     else { a.setAttribute('href', `#/entity/${m[4]}`); a.title = 'Open the entity page'; }

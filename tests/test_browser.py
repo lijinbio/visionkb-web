@@ -7,24 +7,15 @@ Screenshots go to $VISIONKB_SCREENSHOTS when set.
 
 import os
 import re
-from pathlib import Path
 
 import pytest
 
-from tests.conftest import ACCESS_CODE, CANARY_KEY
-from tests.servers import ServerThread
-from visionkb_web.app import create_app
+from tests.conftest import ACCESS_CODE, CANARY_KEY, shot
 
 pytestmark = [
     pytest.mark.browser,
     pytest.mark.skipif(os.environ.get("VISIONKB_BROWSER") != "1", reason="set VISIONKB_BROWSER=1"),
 ]
-
-
-@pytest.fixture(scope="module")
-def web(base_settings):
-    with ServerThread(create_app(base_settings), lifespan="on") as srv:
-        yield srv
 
 
 @pytest.fixture
@@ -40,13 +31,6 @@ def page(web):
         pg.on("pageerror", lambda e: pg.problems.append(f"pageerror: {e}"))
         yield pg
         browser.close()
-
-
-def shot(pg, name):
-    out = os.environ.get("VISIONKB_SCREENSHOTS")
-    if out:
-        Path(out).mkdir(parents=True, exist_ok=True)
-        pg.screenshot(path=str(Path(out) / f"{name}.png"), full_page=False)
 
 
 def test_page_flow(page, web):

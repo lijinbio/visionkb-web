@@ -3,6 +3,7 @@ import { keyStore, models as listModels, chat as postChat } from './api.js';
 import { renderMarkdown } from './render.js';
 import { h, clear, fmt } from './ui.js';
 import { EXAMPLES } from './pages.js';
+import { createLayout } from './layout.js';
 
 const HISTORY = 'vkw.chat';
 const MODEL = 'vkw.model';
@@ -25,9 +26,10 @@ export function createChat(panel, ctx) {
   // ---- header ----
   const newBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: 'Start a new conversation' }, 'New chat');
   const closeBtn = h('button', { type: 'button', class: 'btn btn-ghost btn-sm chat-toggle', 'aria-label': 'Close chat' }, 'Close');
+  const actions = h('div', { class: 'actions' }, newBtn);
   const head = h('div', { class: 'chat-head' },
-    h('div', {}, h('h2', {}, 'Ask VisionKB'), h('div', { class: 'sub' }, 'Answers from the KG tools · your own Claude key')),
-    h('div', { class: 'actions' }, newBtn, closeBtn));
+    h('div', { class: 'chat-title' }, h('h2', {}, 'Ask VisionKB'), h('div', { class: 'sub' }, 'Answers from the KG tools · your own Claude key')),
+    actions);
 
   // ---- key + model ----
   const keyBox = h('div', { class: 'chat-key' });
@@ -187,10 +189,18 @@ export function createChat(panel, ctx) {
   const count = h('span', { class: 'count' }, '');
   const sendBtn = h('button', { type: 'submit', class: 'btn btn-primary' }, 'Send');
   const form = h('form', { class: 'chat-input' }, ta, h('div', { class: 'row' }, count, sendBtn));
+  // auto-grow up to about 8 lines (height through the CSSOM, which the CSP allows)
+  const maxInputHeight = () => {
+    const cs = getComputedStyle(ta);
+    const line = parseFloat(cs.lineHeight) || 1.5 * parseFloat(cs.fontSize) || 22;
+    return 8 * line + parseFloat(cs.paddingTop || 0) + parseFloat(cs.paddingBottom || 0) + 2;
+  };
   const updateCount = () => {
     count.textContent = ta.value.length > maxChars * 0.8 ? `${ta.value.length}/${maxChars}` : 'Enter to send · Shift+Enter for a new line';
     ta.style.height = 'auto';
-    ta.style.height = `${Math.min(ta.scrollHeight + 2, 192)}px`;
+    const max = maxInputHeight();
+    ta.style.height = `${Math.min(ta.scrollHeight + 2, max)}px`;
+    ta.style.overflowY = ta.scrollHeight + 2 > max ? 'auto' : 'hidden';
   };
   ta.addEventListener('input', updateCount);
   ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
@@ -256,6 +266,7 @@ export function createChat(panel, ctx) {
 
   function ask(text, { send: doSend = false } = {}) {
     open(true);
+    if (layout.mode === 'collapsed') layout.setMode('docked', { focus: false });
     if (busy) return;
     ta.value = text;
     updateCount();
@@ -275,8 +286,12 @@ export function createChat(panel, ctx) {
   newBtn.addEventListener('click', () => { history = []; save(); renderLog(); ta.focus(); });
 
   panel.append(head, keyBox, log, live, form);
+  const layout = createLayout(panel, {
+    focusInput: () => ta.focus(), chatInput: ta, openOverlay: open, isOverlayOpen: () => panel.classList.contains('open'),
+  });
+  actions.append(...layout.buttons, closeBtn);
   renderKey();
   renderLog();
   updateCount();
-  return { ask, open, forgetKey: () => { keyStore.forget(); renderKey(); } };
+  return { ask, open, layout, forgetKey: () => { keyStore.forget(); renderKey(); } };
 }

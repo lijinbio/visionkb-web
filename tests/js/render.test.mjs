@@ -9,7 +9,7 @@ globalThis.document = dom.window.document;
 globalThis.Node = dom.window.Node;
 const { window } = dom;
 const { document } = dom.window;
-const { renderMarkdown, sanitize } = await import('../../src/visionkb_web/static/js/render.js');
+const { renderMarkdown, sanitize, shortEdge } = await import('../../src/visionkb_web/static/js/render.js');
 
 const HOSTILE = [
   'Answer <script>window.__pwned=1</script> <img src=x onerror="window.__pwned=2">',
@@ -59,7 +59,7 @@ test('identifiers become in-page links', () => {
   assert.deepEqual(links, [
     ['HGNC:10012', '#/entity/HGNC:10012', null],
     ['CL:0000604', '#/entity/CL:0000604', null],
-    ['visionkb:e-0123456789abcdef0123456789abcdef01234567', '#/evidence/visionkb:e-0123456789abcdef0123456789abcdef01234567', 'visionkb:e-0123456789abcdef0123456789abcdef01234567'],
+    ['visionkb:e-01234567…4567', '#/evidence/visionkb:e-0123456789abcdef0123456789abcdef01234567', 'visionkb:e-0123456789abcdef0123456789abcdef01234567'],
     ['visionkb:ds-hrca-snrna', '#/release', null],
     ['PMID:12345678', 'https://pubmed.ncbi.nlm.nih.gov/12345678/', null],
   ]);
@@ -82,4 +82,14 @@ test('tables are wrapped for horizontal scrolling and code blocks are not linkif
   assert.ok(el.querySelector('div.table-wrap > table'));
   assert.equal(el.querySelector('pre a'), null);
   assert.equal(sanitize('<a href="javascript:alert(1)">x</a>'), '<a>x</a>');
+});
+
+test('edge ids are shortened for display only', () => {
+  assert.equal(shortEdge('visionkb:e-00908362cb45ee177e280e3d80ea3dc4b48e3b36'), 'visionkb:e-00908362…3b36');
+  assert.equal(shortEdge('visionkb:e-abc'), 'visionkb:e-abc');
+  const el = document.createElement('div');
+  renderMarkdown('see visionkb:e-00908362cb45ee177e280e3d80ea3dc4b48e3b36', el);
+  const a = el.querySelector('a[data-edge]');
+  assert.equal(a.dataset.edge, 'visionkb:e-00908362cb45ee177e280e3d80ea3dc4b48e3b36');
+  assert.match(a.title, /00908362cb45ee177e280e3d80ea3dc4b48e3b36/);
 });

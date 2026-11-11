@@ -58,6 +58,20 @@ claim should cite the release and an `edge_id` or dataset: CURIEs such as `HGNC:
 CP10k, donors; publications). The assistant says so when the graph cannot answer. Check the evidence before relying on
 an answer.
 
+### Arrange the chat panel
+
+- **Width**: drag the panel's left edge (a grip appears on hover), or focus the edge (Tab) and use the arrow keys
+  (Shift for bigger steps; Home = widest, End = narrowest). Double-click the edge (or press Enter on it) to reset.
+  The default is `clamp(400px, 34vw, 640px)`; the chat stays between 360 px and 70% of the window and leaves the page
+  at least 480 px.
+- **Expand** (header button): the chat fills the content area with a centred reading column; Esc returns to docked.
+- **Collapse** (header button, or **Ctrl/⌘+J**): the panel hides and an *Ask VisionKB* tab on the right edge brings it
+  back; the conversation is kept. Ctrl/⌘+J works from the page and the chat box, not while typing in other fields.
+- **Full page**: the header link opens `#/chat` in the same tab with the same conversation; clicking an identifier in an
+  answer goes to its page with the chat docked.
+- Width and mode are remembered in this browser (`localStorage` key `visionkb-web.layout`, UI preferences only; the key
+  and the chat are never stored there). Below 900 px the chat is a full-screen panel you open and close.
+
 ### What is sent to Anthropic, and what is not
 
 | Sent to Anthropic (your account) | Not sent |
@@ -78,10 +92,10 @@ docker run --rm -p 8780:8780 --read-only --tmpfs /tmp -v /path/to/secrets:/run/s
   -e VISIONKB_API_TOKEN_FILE=/run/secrets/api_token_read \
   -e VISIONKB_WEB_SECRET_FILE=/run/secrets/web_secret \
   -e VISIONKB_WEB_ACCESS_CODES_FILE=/run/secrets/web_access_codes \
-  ghcr.io/lijinbio/visionkb-web:0.0.2
+  ghcr.io/lijinbio/visionkb-web:0.0.3
 
-apptainer pull visionkb-web_0.0.2.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.2
-apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.2.sif
+apptainer pull visionkb-web_0.0.3.sif docker://ghcr.io/lijinbio/visionkb-web:0.0.3
+apptainer run --cleanenv --env VISIONKB_WEB_HOST=127.0.0.1,VISIONKB_WEB_PORT=18922,... visionkb-web_0.0.3.sif
 ```
 
 Use the image by digest in deployments (see the GitHub release notes). [visionkb-deploy](https://github.com/lijinbio/visionkb-deploy)
@@ -142,7 +156,7 @@ kg_releases, history_dropped, elapsed_s}` · `error {code, message}`. Every non-
 
 ## Security
 
-- **Claude key**: browser `sessionStorage` only; sent in the `X-Anthropic-Key` header to this server and used for that
+- **Claude key**: browser `sessionStorage` only (`localStorage` holds only the panel layout, `{width, mode}`); sent in the `X-Anthropic-Key` header to this server and used for that
   one upstream call. Never stored, cached, logged, put in metrics, passed to the MCP child or echoed in errors: every
   log line goes through a formatter that redacts `sk-ant-…` patterns and the key of the request being served;
   request headers are never logged. A canary-key test checks logs (at DEBUG), responses and app state.
@@ -165,7 +179,7 @@ See [SECURITY.md](SECURITY.md) for reporting.
 |---|---|---|
 | Unit | `uv run pytest` | allowlist (no `/proposals`, GET only), envelope pass-through, access codes + CSRF, CSP and headers, limits, `/readyz`, MCP child restart and clean environment, models default rule, SSE sequence of a two-tool conversation and the tool-call cap against a mock Anthropic server, history truncation, canary key never in logs or responses; the real `visionkb-kg-mcp` runs against a fake API |
 | JavaScript | `npm ci && npm test && npm run lint` | DOMPurify/marked on a hostile answer (jsdom), identifier links; ESLint |
-| Browser | `VISIONKB_BROWSER=1 uv run pytest tests/test_browser.py` | Chromium: gate, search, entity page, evidence drawer, chat with notice and tool trace, hostile answer inert, no CSP violations, mobile layout |
+| Browser | `VISIONKB_BROWSER=1 uv run pytest tests/test_browser.py tests/test_browser_layout.py` | Chromium: gate, search, entity page, evidence drawer, chat with notice and tool trace, hostile answer inert; chat layout (default width at 1366/1920 px, drag and keyboard resize with bounds, reset, persistence, expanded/collapsed/Esc/Ctrl+J, `#/chat`, key never in localStorage); mobile; no CSP violations |
 | Integration | `VISIONKB_IT_WEB_URL=… uv run pytest tests/integration` | a running instance against a real API (see the test's docstring) |
 | Container | CI job `container` | image smoke test with the fake API and the mock provider |
 

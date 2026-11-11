@@ -76,3 +76,18 @@ def client(base_settings):
     with make_client(base_settings) as c:
         login(c)
         yield c
+
+
+@pytest.fixture(scope="session")
+def web(base_settings):
+    """The web app on a real port (lifespan on: the MCP child runs) for the browser tests."""
+    with ServerThread(create_app(base_settings), lifespan="on") as srv:
+        yield srv
+
+
+def shot(pg, name):
+    """Screenshot to $VISIONKB_SCREENSHOTS when set."""
+    out = os.environ.get("VISIONKB_SCREENSHOTS")
+    if out:
+        Path(out).mkdir(parents=True, exist_ok=True)
+        pg.screenshot(path=str(Path(out) / f"{name}.png"), full_page=False)
